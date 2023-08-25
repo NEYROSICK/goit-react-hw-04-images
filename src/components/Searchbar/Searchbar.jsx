@@ -1,41 +1,36 @@
-import { Component } from 'react';
 import { Header, Form, Button, Label, Input } from './searchbar.styled';
 import { FaSearch } from 'react-icons/fa';
+import { useContext } from 'react';
+import { Context } from 'context/globalContext';
 
-import PropTypes from 'prop-types';
+const Searchbar = () => {
+  const { setQuery } = useContext(Context);
 
-class Searchbar extends Component {
-  handleSubmit = e => {
+  const handleSubmit = e => {
     e.preventDefault();
     const form = e.currentTarget;
-    this.props.onSubmit(form.elements.search.value);
+    setQuery(form.elements.search.value);
   };
 
-  render() {
-    return (
-      <Header className="searchbar">
-        <Form className="form" onSubmit={this.handleSubmit}>
-          <Button type="submit" className="button">
-            <Label className="button-label">Search</Label>
-            <FaSearch size={20} />
-          </Button>
+  return (
+    <Header className="searchbar">
+      <Form className="form" onSubmit={handleSubmit}>
+        <Button type="submit" className="button">
+          <Label className="button-label">Search</Label>
+          <FaSearch size={20} />
+        </Button>
 
-          <Input
-            className="input"
-            type="text"
-            autoComplete="off"
-            autoFocus
-            name="search"
-            placeholder="Search images and photos"
-          />
-        </Form>
-      </Header>
-    );
-  }
-}
-
-Searchbar.propTypes = {
-  onSubmit: PropTypes.func.isRequired,
+        <Input
+          className="input"
+          type="text"
+          autoComplete="off"
+          autoFocus
+          name="search"
+          placeholder="Search images and photos"
+        />
+      </Form>
+    </Header>
+  );
 };
 
 export default Searchbar;

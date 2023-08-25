@@ -1,111 +1,100 @@
-import PropTypes from 'prop-types';
 import { getImages } from 'api/images';
-import { PureComponent } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import ImageGalleryItem from 'components/ImageGalleryItem';
 import Button from 'components/Button';
 import Loader from 'components/Loader';
 import { Ul, ErrorMsg, LoaderContainer } from './imageGallery.styled';
+import { Context } from 'context/globalContext';
 
-class ImageGallery extends PureComponent {
-  state = {
-    images: [],
-    status: 'resolved',
-    totalHits: 0,
-    isLoaderShown: false,
-  };
+const ImageGallery = () => {
+  const [images, setImages] = useState([]);
+  const [status, setStatus] = useState('resolved');
+  const [totalHits, setTotalHits] = useState(0);
+  const [isLoaderShown, setLoaderShown] = useState(false);
+  const [page, setPage] = useState(1);
+  const [error, setError] = useState('');
 
-  #page = 1;
-  #errorMessage = '';
+  const { query } = useContext(Context);
 
-  componentDidUpdate(prevProps) {
-    if (prevProps.query !== this.props.query) {
-      this.#page = 1;
-      this.setState({
-        images: [],
-        isLoadMoreShown: false,
-        status: 'pending',
-      });
-      this.fetchImages();
+  useEffect(() => {
+    if (query) {
+      setPage(1);
+      setImages([]);
+      setStatus('pending');
     }
-  }
+  }, [query]);
 
-  fetchImages = async () => {
+  useEffect(() => {
+    if (status === 'pending') {
+      fetchImages();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
+
+  const fetchImages = async () => {
     try {
-      if (this.state.status === 'rejected') {
-        this.setState({ status: 'pending' });
+      if (status === 'rejected') {
+        setStatus('pending');
       } else {
-        this.setState({ isLoaderShown: true });
+        setLoaderShown(true);
       }
 
-      const { hits: images, totalHits } = await getImages(
-        this.props.query,
-        this.#page
+      const { hits: receivedImages, totalHits: totalImages } = await getImages(
+        query,
+        page
       );
 
-      if (!images.length) {
+      if (!receivedImages.length) {
         throw new Error('No matches found for your query :(');
       }
 
-      this.setState(prevState => ({
-        images: [...prevState.images, ...images],
-        isLoaderShown: false,
-        status: 'resolved',
-        totalHits,
-      }));
-
-      this.#page += 1;
+      setImages([...images, ...receivedImages]);
+      setPage(page + 1);
+      setLoaderShown(false);
+      setStatus('resolved');
+      setTotalHits(totalImages);
     } catch (error) {
-      this.setState({ status: 'rejected' });
-      this.#errorMessage = error.message;
+      setStatus('rejected');
+      setError(error.message);
     }
   };
 
-  render() {
-    const { images, status, totalHits, isLoaderShown } = this.state;
-    const { onImageClick } = this.props;
-    const isLoadMoreShown =
-      images.length && images.length < totalHits && !isLoaderShown;
+  const isLoadMoreShown =
+    images.length && images.length < totalHits && !isLoaderShown;
 
-    if (status === 'pending') {
-      return (
-        <LoaderContainer>
-          <Loader />
-        </LoaderContainer>
-      );
-    }
-
-    if (status === 'rejected') {
-      return <ErrorMsg>{this.#errorMessage}</ErrorMsg>;
-    }
-
-    if (status === 'resolved') {
-      return (
-        <>
-          <Ul>
-            {images.map(image => {
-              return (
-                <ImageGalleryItem
-                  handleClick={onImageClick}
-                  key={image.id}
-                  imageWebURL={image.webformatURL}
-                  imageLargeURL={image.largeImageURL}
-                  descr={image.tags}
-                />
-              );
-            })}
-          </Ul>
-
-          {isLoaderShown ? <Loader /> : null}
-          {isLoadMoreShown ? <Button fetchImages={this.fetchImages} /> : null}
-        </>
-      );
-    }
+  if (status === 'pending') {
+    return (
+      <LoaderContainer>
+        <Loader />
+      </LoaderContainer>
+    );
   }
-}
 
-ImageGallery.propTypes = {
-  query: PropTypes.string.isRequired,
-  onImageClick: PropTypes.func.isRequired,
+  if (status === 'rejected') {
+    return <ErrorMsg>{error}</ErrorMsg>;
+  }
+
+  if (status === 'resolved') {
+    return (
+      <>
+        <Ul>
+          {images.map(image => {
+            return (
+              <ImageGalleryItem
+                key={image.id}
+                imageWebURL={image.webformatURL}
+                imageLargeURL={image.largeImageURL}
+                descr={image.tags}
+              />
+            );
+          })}
+        </Ul>
+
+        {isLoaderShown ? <Loader /> : null}
+        {isLoadMoreShown ? <Button fetchImages={fetchImages} /> : null}
+      </>
+    );
+  }
 };
 
 export default ImageGallery;

@@ -1,31 +1,36 @@
-import PropTypes from 'prop-types';
 import { Backdrop, ModalField } from './modal.styled';
-import { Component } from 'react';
+import { useContext, useEffect } from 'react';
+import { Context } from 'context/globalContext';
 
-class Modal extends Component {
-  componentDidMount = () => {
-    document.addEventListener('keydown', this.props.onEscClose);
+const Modal = () => {
+  const {
+    setModalVisible,
+    imageObj: { url: imageURL, descr },
+    setImageObj,
+  } = useContext(Context);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleClose);
+    return () => {
+      document.removeEventListener('keydown', handleClose);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleClose = e => {
+    if (e.key === 'Escape' || e.target === e.currentTarget) {
+      setModalVisible(false);
+      setImageObj({});
+    }
   };
 
-  componentWillUnmount = () => {
-    document.removeEventListener('keydown', this.props.onEscClose);
-  };
-
-  render() {
-    const { imageURL, descr, handleClick } = this.props;
-    return (
-      <Backdrop onClick={handleClick}>
-        <ModalField>
-          <img src={imageURL} alt={descr} />
-        </ModalField>
-      </Backdrop>
-    );
-  }
-}
-
-Modal.propTypes = {
-  imageURL: PropTypes.string.isRequired,
-  descr: PropTypes.string.isRequired,
+  return (
+    <Backdrop onClick={handleClose}>
+      <ModalField>
+        <img src={imageURL} alt={descr} />
+      </ModalField>
+    </Backdrop>
+  );
 };
 
 export default Modal;

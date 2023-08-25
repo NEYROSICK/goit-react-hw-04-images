@@ -1,16 +1,20 @@
 import PropTypes from 'prop-types';
 import { Li, Img } from './imageGalleryItem.styled';
+import { useContext } from 'react';
+import { Context } from 'context/globalContext';
 
-const ImageGalleryItem = ({
-  imageWebURL,
-  imageLargeURL,
-  descr,
-  handleClick,
-}) => {
+const ImageGalleryItem = ({ imageWebURL, imageLargeURL, descr }) => {
+  const { setModalVisible, setImageObj } = useContext(Context);
+
+  const onImageClick = (url, descr) => {
+    setModalVisible(true);
+    setImageObj({ url, descr });
+  };
+
   return (
     <Li
       onClick={() => {
-        handleClick(imageLargeURL, descr);
+        onImageClick(imageLargeURL, descr);
       }}
       className="gallery-item"
     >
@@ -23,7 +27,6 @@ ImageGalleryItem.propTypes = {
   imageWebURL: PropTypes.string.isRequired,
   imageLargeURL: PropTypes.string.isRequired,
   descr: PropTypes.string.isRequired,
-  handleClick: PropTypes.func.isRequired,
 };
 
 export default ImageGalleryItem;
